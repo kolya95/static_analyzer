@@ -55,7 +55,7 @@ class Callable(Name):
         self.parse(st,visible)
         for s in self.local_names:
             if isinstance(s, Function) and len(s.body) >= 1:
-                s.parse(s.body, self.local_names)
+                s.do_all(s.body, self.local_names)
 
 
     def parse_args(self, st, local):
