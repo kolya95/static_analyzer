@@ -51,37 +51,55 @@ class Callable(Name):
         self.visible_names = []
         self.visible_names += visible_names
 
-    def do_all(self,st,visible):
-        self.parse(st,visible)
+        self.global_used = []
+
+    def do_all(self, st, visible):
+        self.parse(st, visible)
+        self.local_variable()
         for s in self.local_names:
             if isinstance(s, Function) and len(s.body) >= 1:
                 s.do_all(s.body, self.local_names)
-
+                s.local_variable()
 
     def parse_args(self, st, local):
         if st[0] in NON_TERMINAL:
             if st[0] == 265:
                 self.local_names.append(Variable(st[1][1]))
             else:
-                for j in range(1,len(st)):
+                for j in range(1, len(st)):
                     self.parse_args(st[j], local)
         else:
             return
 
+    def local_variable(self):
+            for used in self.global_used:
+                for var in self.local_names:
+                    if used[0].name == var.name:
+                        err = Error(used[1], used[2], "error, use local variable before defining" + " line " + str(used[1]) + " position " + str(used[2]))
+                        if err not in ERROR_LIST:
+                            ERROR_LIST.append(err)
+
     def parse(self, st, visible):
         """ parses function body"""
+
+
+
         def parse_right_part(st):
             if st[0] in NON_TERMINAL:
-                if (st[0] == 319) and len(st) > 2 and st[1][1] == token.NAME:
+                if (st[0] == 319) and len(st) > 2 and st[1][1][0] == token.NAME and st[2][0] != 322:
                     var_name = st[1][1][1]
+
                     if not isinstance(st[2], int):
                         for name in st[2]:
                             if not isinstance(name, int):
                                 var_name += name[1]
+
                     if not is_local_identified(Name(var_name)) and not is_global_identified(Name(var_name)):
                         err = Error(st[1][1][2], st[1][1][3], "error, undefined variable" + " line " + str(st[1][1][2]) + " position " + str(st[1][1][3]))
                         if err not in ERROR_LIST:
                             ERROR_LIST.append(err)
+                elif (st[0] == 320) and (st[1][0] == token.NAME) and (not is_local_identified(Name(st[1][1]))) and (is_global_identified(Name(st[1][1]))):
+                    self.global_used.append([Variable(st[1][1]), st[1][2], st[1][3]])
                 elif (st[0] == 320) and (st[1][0] == token.NAME) and (not is_local_identified(Name(st[1][1]))) and (not is_global_identified(Name(st[1][1]))):
                     err = Error(st[1][2], st[1][3], "error, undefined variable" + " line " + str(st[1][2]) + " position " + str(st[1][3]))
                     if err not in ERROR_LIST:
@@ -114,6 +132,7 @@ class Callable(Name):
                     if is_local_identified(sym):
                         for s in self.local_names:
                             if isinstance(s, Function) and s.name == sym.name and len(s.body)>=1:
+                                #parse_right_part(s.args)
                                 s.parse(s.body, self.visible_names + self.local_names)
                                 for p in s.local_names:
                                     if isinstance(p, Function) and len(p.body)>1:
@@ -140,7 +159,8 @@ class Callable(Name):
 
         def add_var(st):
             if st[0] == 320 and not keyword.iskeyword(st[1][1]):
-                self.local_names.append(Variable(st[1][1]))
+                if not is_local_identified(Variable(st[1][1])):
+                    self.local_names.append(Variable(st[1][1]))
             else:
                 for j in range(1,len(st)):
                     if st[j][0] in NON_TERMINAL:
@@ -159,7 +179,7 @@ class Callable(Name):
             elif st[0] == 329:
                 GLOBAL_SYMBOL_LIST.append(Class(st[2][1], st))
             else:
-                parse_right_part(st)
+                self.parse(st, self.visible_names + self.local_names)
 
         def parse_import(st):
             if st[0] == 283:
@@ -342,12 +362,15 @@ class Callable(Name):
                         else:
                             print(sym[0])
 
+
+
         if len(st) > 0 and st[0] in NON_TERMINAL:
             if st[0] == 271 and len(st) == 4 and st[2][0] != 273:
-                self.parse(st[1], visible)
                 parse_right_part(st[3])
+                self.parse(st[1], visible)
             elif st[0] == 271 and len(st) == 4 and st[2][0] == 273:
                 parse_right_part(st[1])
+                add_var(st[1])
                 parse_right_part(st[3])
             elif st[0] == 271 and len(st) == 2:
                 var_or_call(st,st)
@@ -496,9 +519,9 @@ def parse_main(st):
         elif st[0] == 329:
             GLOBAL_SYMBOL_LIST.append(Class(st[2][1],st))
         elif st[0] == 294:
-            parse(st[1])
+            parse(st)
         else:
-            parse_right_part(st)
+            parse(st)
 
     def parse_import(st):
         if st[0] == 283:
@@ -772,7 +795,7 @@ class Error:
 
 # нужен третий проход, который разбирается с правой частью...
 
-file_str = '/home/kolya/PycharmProjects/static_analyzer/MyTests/test3.py'
+file_str = '/home/kolya/PycharmProjects/static_analyzer/MyTests/test1.py'
 file = open(file_str, 'r')
 source_code_str = file.read()
 file.close()
