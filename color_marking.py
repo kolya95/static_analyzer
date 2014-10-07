@@ -17,6 +17,8 @@ line_ranks = [0]
 def set_color_marks_and_ranks(source_code_str):
     global color_marks
     global line_ranks
+    color_marks = [[]]
+    line_ranks = [0]
     i = 0
     tokens = tokenize(BytesIO(source_code_str.encode('utf-8')).readline)
     previous_tok_ecol = 0
@@ -68,11 +70,26 @@ def set_color_marks_and_ranks(source_code_str):
                 color_marks[i].extend([LxConstInteger]*len(tok[1]))
                 color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
                 previous_tok_ecol = tok[3][1]
+            elif tok[0] == token.COLON:
+                color_marks[i].extend([LxConstInteger]*len(tok[1]))
+                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                previous_tok_ecol = tok[3][1]
+                line_ranks[len(line_ranks)-1] -= 1
             else:
                 color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
                 color_marks[i].extend([LxTypeEmpty]*len(tok[1]))
                 previous_tok_ecol = tok[3][1]
-    del line_ranks[len(line_ranks)-1]
+    pair_line_ranks = []
+
+
+    for i in range(len(line_ranks)):
+        if i<len(line_ranks)-1:
+            pair_line_ranks.append((0, line_ranks[i+1]-line_ranks[i]))
+        else:
+            pair_line_ranks.append((line_ranks[i], 0))
+    line_ranks = []
+    line_ranks.extend(pair_line_ranks)
+    print(line_ranks)
 
 
 def get_colors():
@@ -86,10 +103,10 @@ def get_ranks():
 
 if __name__ == "__main__":
     file = open('/home/kolya/PycharmProjects/static_analyzer/MyTests/test4.py', 'r')
-    file = open('/home/kolya/PycharmProjects/static_analyzer/static_analisys.py', 'r')
+    file = open('/home/kolya/PycharmProjects/static_analyzer/color_marking.py', 'r')
     source_code_str = file.read()
     file.close()
-    #print(source_code_str)
+    print(source_code_str)
     str_list = source_code_str.split('\n')
     set_color_marks_and_ranks(source_code_str)
     print( len(str_list) )

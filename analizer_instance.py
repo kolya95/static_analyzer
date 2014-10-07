@@ -63,7 +63,7 @@ def set_source_text(text):
     global LINE_PROPERTIES
     global LINE_RANKS
     color_marking.set_color_marks_and_ranks(SOURCE_TEXT)
-    LINE_RANKS = [(0, x) for x in color_marking.get_ranks()]
+    LINE_RANKS = color_marking.get_ranks()
     # VY: Результат -- это список пар чисел
     # каждое число -- это не количество отступов, а ожидаемое (логически, а не по количеству подсчитанных отступов)
     # изменение отступа. В качестве признака можно использовать, например, двоеточие в конце строки.
@@ -146,11 +146,12 @@ def get_line_property(line_no, line_text):
     """
     assert isinstance(line_no, int)
     assert isinstance(line_text, str)
-    return []
+    return [LxTypeEmpty]*len(str)
+
 
 
 if __name__ == "__main__":
-    file = open(os.path.abspath(__file__) + "/MyTests/test5.py", 'r')
+    file = open(os.path.dirname(__file__) + "/MyTests/test5.py", 'r')
     # VY: нужно использовать относительные имена файлов, а не абсолютные
 
     SOURCE_TEXT = file.read()
