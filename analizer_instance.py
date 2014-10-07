@@ -2,6 +2,7 @@
 Analizer instance module
 NOTE: Each analizer instance runs in it's own interpreter
 """
+import os
 
 from kumir_constants import *
 
@@ -14,8 +15,12 @@ LINE_PROPERTIES = []
 LINE_RANKS = []
 
 
-class ERROR:
+class Error:
+    # VY: В соответствии с PEP-8 и Google Coding Standards, имена классов - CamelCase
+    # В PyCharm есть функция "умного" переименования имен: Refactor -> Rename... (Shift+F6)
+    # Проверь также и другие файлы
     """ One error message """
+
     def __init__(self, line_no, start_pos, length, message):
         """
             line_no -- line number (int)
@@ -43,7 +48,9 @@ def set_source_dir_name(path):
     SOURCE_DIR_NAME = path
 
 
-from static_analisys import *
+from static_analisys import *  # не используемый import
+
+
 def set_source_text(text):
     """
     Set the source text and require complete analisis
@@ -56,8 +63,42 @@ def set_source_text(text):
     global LINE_PROPERTIES
     global LINE_RANKS
     color_marking.set_color_marks_and_ranks(SOURCE_TEXT)
-    LINE_RANKS = color_marking.get_ranks()
+    LINE_RANKS = [(0, x) for x in color_marking.get_ranks()]
+    # VY: Результат -- это список пар чисел
+    # каждое число -- это не количество отступов, а ожидаемое (логически, а не по количеству подсчитанных отступов)
+    # изменение отступа. В качестве признака можно использовать, например, двоеточие в конце строки.
+    # Эти значения используются редактором для того, чтобы автоматически вставлять нужное количество отступов при
+    # нажатии Enter.
+    #
+    # Пример:
+    # def sign(x):          # rank = ( 0, +1) # увеличиваем отступ следующей строки, поскольку в конце строки двоеточие
+    #     print(x)          # rank = ( 0,  0) # отступы не меняются
+    #     if x < 0:         # rank = ( 0, +1) # увеличиваем отступ следующей строки, поскольку в конце строки двоеточие
+    #         return -1     # rank = ( 0, -1) # в блоке кода после return не может быть ничего, поэтому уменьшаем отступ
+    #     elif x > 0: return 1  # rank = ( 0,  0) # в данном случае elif ... : и return компенсируют друг друга
+    #     else:             # rank = ( 0, +1) # увеличиваем отступ следующей строки, поскольку в конце строки двоеточие
+    #         return 0      # rank = ( 0, -1) # в блоке кода после return не может быть ничего, поэтому уменьшаем отступ
+    #
+    # Таким образом, для данной программы ranks должно быть:
+    # line_ranks = [ (0,1), (0,0), (0,1), (0,-1), (0,0), (0,1), (0,-1) ]
+    #
+    # Замечание. Похоже, в Python первое число во всех парах, равно 0. Тем не менее, необходимо соблюдать именно такой
+    # интерфейс, который разработан с учетом других ЯП. Например, в Паскале, возможны такие числа:
+    #
+    # program MySuperProgram;  { rank = ( 0,  0) }
+    # var                      { rank = (-1, +1)  -- почему в начале -1 -- смотри ниже, станет понятно }
+    #     i: Integer;          { rank = ( 0,  0) }
+    #     s: String;           { rank = ( 0,  0) }
+    # begin                    { rank = (-1, +1) -- begin должен сместиться влево на 1 уровень с var и program,
+    #                                               но следующая строка -- уже с отступом на +1. Аналогично и с var,
+    #                                               поскольку, в общем случае, описание переменных может следовать
+    #                                               после группы описания const.
+    #    WriteLn('Hello!');    { rank = ( 0,  0) }
+    # end.                     { rank = (-1,  0) -- end сам по себе сдвигается влево (-1), следующие -- на том же уровне
+
+
     LINE_PROPERTIES = color_marking.get_colors()
+
 
 def get_errors():
     """
@@ -107,8 +148,11 @@ def get_line_property(line_no, line_text):
     assert isinstance(line_text, str)
     return []
 
+
 if __name__ == "__main__":
-    file = open('/home/kolya/PycharmProjects/static_analyzer/MyTests/test5.py', 'r')
+    file = open(os.path.abspath(__file__) + "/MyTests/test5.py", 'r')
+    # VY: нужно использовать относительные имена файлов, а не абсолютные
+
     SOURCE_TEXT = file.read()
     file.close()
     print(SOURCE_TEXT)
