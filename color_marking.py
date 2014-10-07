@@ -2,106 +2,110 @@ from tokenize import generate_tokens, tokenize
 import keyword
 import token
 from io import BytesIO
+from kumir_constants import *
 import parser
 
 
-file = open('/home/kolya/PycharmProjects/MyTests/test4.py', 'r')
-source_code_str = file.read()
-file.close()
+SECONDARY_KWD = ("in", "as", "is", "and", "or", "not", "pass", "break", "continue", "return", "else", "elif",
+                 "if", "except", "finally", "try", "raise")
+PRIMARY_KWD = ("def", "for", "class", "import", "from", "with", "global", "None", "while", "yield", "nonlocal", "lambda", "assert", "del")
+#True, False -- отдельно, почему None не отдельно?
 
-try:
-   a = compile(source_code_str, '', '')
-except IndentationError as error:
-   message = {'type': 'F',
-                'row': -1,
-                'column': -1,
-                'text': str(error)}
-   print(message)
-   exit()
+color_marks = [[]]
+line_ranks = [0]
 
-
-
-
-numOfLines = 1
-tokList = []
-for tok in tokenize(BytesIO(source_code_str.encode('utf-8')).readline):
-    tokList = tokList + [tok]
-    print(tok)
-    if tok[0] == token.NEWLINE:
-        numOfLines += 1
-
-
-
-
-
-# typeLex -- стандартные из TokenInfo, для ключевых слов будем использовать 100
-
-CONST_KW_INDEX = 100;
-CONST_SPACE_INDEX = 101;
-class Lexeme:
-    def __init__(self, typeLex,str, startIndex, endIndex, color):
-        self.typeLex = typeLex
-        self.str = str
-        self.startIndex = startIndex
-        self.endIndex = endIndex
-        self.color = color
-
-program = [[] for i in range(numOfLines)]
-i = 0
-for tok in tokList:
-    if tok[1] in keyword.kwlist:
-        program[i] = program[i] + [Lexeme(CONST_KW_INDEX,tok[1],tok[2][1],tok[3][1],'K')]
-    elif i<len(program):
-        if len(program[i])>=1:
-            if program[i][len(program[i])-1].endIndex != tok[2][1]:
-                temp = program[i][len(program[i])-1].endIndex
-                program[i] = program[i] + [Lexeme(CONST_SPACE_INDEX,' ',temp,tok[2][1],'E'*(tok[2][1]-temp))]
-        if tok[0] == token.NAME:
-            program[i] = program[i] + [Lexeme(tok[0],tok[1],tok[2][1],tok[3][1],'N'*(tok[3][1]-tok[2][1]))]
-        elif tok[0] == 54: # почему-то отсутствует token.COMMENT
-            program[i] = program[i] + [Lexeme(tok[0],tok[1],tok[2][1],tok[3][1],'C'*(tok[3][1]-tok[2][1]))]
-        elif tok[0] == token.NEWLINE:
-            program[i] = program[i] + [Lexeme(tok[0],tok[1],tok[2][1],tok[3][1],'L'*(tok[3][1]-tok[2][1]))]
-            i += 1
-        elif tok[0] == token.OP:
-            program[i] = program[i] + [Lexeme(tok[0],tok[1],tok[2][1],tok[3][1],'O'*(tok[3][1]-tok[2][1]))]
-        elif tok[0] == token.STRING:
-            program[i] = program[i] + [Lexeme(tok[0],tok[1],tok[2][1],tok[3][1],'S'*(len(tok[1])))]
-        else:
-            program[i] = program[i] + [Lexeme(tok[0],tok[1],tok[2][1],tok[3][1],'X'*(tok[3][1]-tok[2][1]))]
-
-
-
-class LINE:
-    def __init__(self, statements, relativeIndent = 0 ):
-        self.statements = statements
-        self.relativeIndent = relativeIndent
-for lex in program:
-    print(lex)
-
-colorMarks = [[] for i in range(numOfLines)]
-
-lines = []
-counter = 0
-
-i = 0
-for k in range(len(program)):
-    while i<len(program[k]) and program[k][i].typeLex == token.DEDENT:
-        counter -= 1
-        i+=1
-    while i<len(program[k]) and program[k][i].typeLex == token.INDENT:
-        counter += 1
-        i+=1
-    lines += [LINE(program[k],counter)]
-    print(counter)
-    counter = 0
+def set_color_marks_and_ranks(source_code_str):
+    global color_marks
+    global line_ranks
     i = 0
-    for j in program[k]:
-        colorMarks[k] += [j.color]
+    tokens = tokenize(BytesIO(source_code_str.encode('utf-8')).readline)
+    previous_tok_ecol = 0
+    for tok in tokens:
+        # tok[0] -- token type
+        # tok[1] -- token string
+        # tok[2] -- (srow, scol)
+        # tok[3] -- (erow, ecol)
+        # tok[4] -- "logical" line
+        if tok[2] != tok[3] or tok[0] == token.DEDENT or tok[0] == token.NEWLINE:
+            if tok[0] == token.NAME:
+                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                if tok[1] in SECONDARY_KWD:
+                    color_marks[i].extend([LxTypeSecondaryKwd]*len(tok[1]))
+                elif tok[1] in PRIMARY_KWD:
+                    color_marks[i].extend([LxTypePrimaryKwd]*len(tok[1]))
+                elif tok[1] == "True":
+                    color_marks[i].extend([LxConstBoolTrue]*len(tok[1]))
+                elif tok[1] == "False":
+                    color_marks[i].extend([LxConstBoolFalse]*len(tok[1]))
+                else:
+                    color_marks[i].extend([LxTypeName]*len(tok[1]))
+                previous_tok_ecol = tok[3][1]
+            elif tok[0] == token.STRING:
+                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                color_marks[i].extend([LxConstLiteral]*len(tok[1]))
+                previous_tok_ecol = tok[3][1]
+            elif tok[0] == token.OP:
+                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                color_marks[i].extend([LxTypeOperator]*len(tok[1]))
+                previous_tok_ecol = tok[3][1]
+            elif tok[0] == token.N_TOKENS: #comments
+                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                color_marks[i].extend([LxTypeComment]*len(tok[1]))
+                previous_tok_ecol = tok[3][1]
+            elif tok[0] == token.INDENT:
+                color_marks[i].extend([LxTypeEmpty]*len(tok[1]))
+                line_ranks[len(line_ranks)-1] += 1
+                previous_tok_ecol = tok[3][1]
+            elif tok[0] == token.DEDENT:
+                line_ranks[len(line_ranks)-1] -= 1
+                #previous_tok_ecol = tok[3][1]
+            elif tok[0] == token.NEWLINE or tok[0] == 55: #55 -- '\n'
+                color_marks.append([])
+                line_ranks.append(line_ranks[len(line_ranks)-1])
+                i += 1
+                previous_tok_ecol = 0
+            elif tok[0] == token.NUMBER:
+                color_marks[i].extend([LxConstInteger]*len(tok[1]))
+                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                previous_tok_ecol = tok[3][1]
+            else:
+                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                color_marks[i].extend([LxTypeEmpty]*len(tok[1]))
+                previous_tok_ecol = tok[3][1]
+    del line_ranks[len(line_ranks)-1]
 
-print(colorMarks)
+
+def get_colors():
+    global color_marks
+    return color_marks
+
+def get_ranks():
+    global line_ranks
+    return line_ranks
 
 
-st = parser.suite(source_code_str)
-statements = parser.st2list(st, line_info=True, col_info=True)
-print(statements)
+if __name__ == "__main__":
+    file = open('/home/kolya/PycharmProjects/static_analyzer/MyTests/test4.py', 'r')
+    file = open('/home/kolya/PycharmProjects/static_analyzer/static_analisys.py', 'r')
+    source_code_str = file.read()
+    file.close()
+    #print(source_code_str)
+    str_list = source_code_str.split('\n')
+    set_color_marks_and_ranks(source_code_str)
+    print( len(str_list) )
+    print( len(color_marks) )
+    for i in range(len(str_list)):
+        if len(str_list[i])!=len(color_marks[i]):
+            print("bad news..." + str(i))
+
+            print(len(str_list[i]))
+            print(len(color_marks[i]))
+
+
+    print(get_colors())
+    print(get_ranks())
+
+
+
+
+

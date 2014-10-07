@@ -5,6 +5,8 @@ NOTE: Each analizer instance runs in it's own interpreter
 
 from kumir_constants import *
 
+import color_marking
+
 SOURCE_DIR_NAME = ""
 SOURCE_TEXT = ""
 ERRORS = []
@@ -12,7 +14,7 @@ LINE_PROPERTIES = []
 LINE_RANKS = []
 
 
-class Error:
+class ERROR:
     """ One error message """
     def __init__(self, line_no, start_pos, length, message):
         """
@@ -41,6 +43,7 @@ def set_source_dir_name(path):
     SOURCE_DIR_NAME = path
 
 
+from static_analisys import *
 def set_source_text(text):
     """
     Set the source text and require complete analisis
@@ -50,6 +53,11 @@ def set_source_text(text):
     global SOURCE_TEXT
     SOURCE_TEXT = text
 
+    global LINE_PROPERTIES
+    global LINE_RANKS
+    color_marking.set_color_marks_and_ranks(SOURCE_TEXT)
+    LINE_RANKS = color_marking.get_ranks()
+    LINE_PROPERTIES = color_marking.get_colors()
 
 def get_errors():
     """
@@ -98,3 +106,12 @@ def get_line_property(line_no, line_text):
     assert isinstance(line_no, int)
     assert isinstance(line_text, str)
     return []
+
+if __name__ == "__main__":
+    file = open('/home/kolya/PycharmProjects/static_analyzer/MyTests/test5.py', 'r')
+    SOURCE_TEXT = file.read()
+    file.close()
+    print(SOURCE_TEXT)
+    set_source_text(SOURCE_TEXT)
+    print(get_line_properties())
+    print(get_line_ranks())

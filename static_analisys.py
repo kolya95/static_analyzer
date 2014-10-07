@@ -793,41 +793,41 @@ class Error:
         else:
             return False
 
-# нужен третий проход, который разбирается с правой частью...
 
-file_str = '/home/kolya/PycharmProjects/static_analyzer/MyTests/test1.py'
-file = open(file_str, 'r')
-source_code_str = file.read()
-file.close()
-
-
-try:
-    a = compile(source_code_str, '', 'exec')
-except Exception as error:
-    if isinstance("", SyntaxError):
-        message = {'type': 'F',
-                   'row': error.lineno,
-                   'column': error.offset,
-                   'text': error.message}
-    else:
-        message = {'type': 'F',
-                   'row': -1,
-                   'column': -1,
-                   'text': str(error)}
-    print(message)
-    exit()
+if __name__ == "__main__":
+    file_str = '/home/kolya/PycharmProjects/static_analyzer/MyTests/test1.py'
+    file = open(file_str, 'r')
+    source_code_str = file.read()
+    file.close()
 
 
-st_main = parser.suite(source_code_str)
-statements = parser.st2list(st_main, line_info=True, col_info=True)
+    try:
+        a = compile(source_code_str, '', 'exec')
+    except Exception as error:
+        if isinstance("", SyntaxError):
+            message = {'type': 'F',
+                       'row': error.lineno,
+                       'column': error.offset,
+                       'text': error.message}
+        else:
+            message = {'type': 'F',
+                       'row': -1,
+                       'column': -1,
+                       'text': str(error)}
+        print(message)
+        exit()
 
-parse_main(statements)
+
+    st_main = parser.suite(source_code_str)
+    statements = parser.st2list(st_main, line_info=True, col_info=True)
+
+    parse_main(statements)
 
 
-for s in GLOBAL_SYMBOL_LIST:
-    if isinstance(s, Function) and len(s.body) >= 1:
-        s.do_all(s.body, GLOBAL_SYMBOL_LIST)
+    for s in GLOBAL_SYMBOL_LIST:
+        if isinstance(s, Function) and len(s.body) >= 1:
+            s.do_all(s.body, GLOBAL_SYMBOL_LIST)
 
 
-for err in ERROR_LIST:
-    print(err.info)
+    for err in ERROR_LIST:
+        print(err.info)
