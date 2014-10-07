@@ -146,6 +146,12 @@ def get_line_property(line_no, line_text):
     """
     assert isinstance(line_no, int)
     assert isinstance(line_text, str)
+    global  LINE_RANKS
+    changes = color_marking.is_change_rank(line_text)
+    print(LINE_RANKS[line_no])
+    LINE_RANKS[line_no] = (changes[0]+LINE_RANKS[line_no][0],changes[1]+LINE_RANKS[line_no][1])
+    print(LINE_RANKS[line_no])
+
     return [LxTypeEmpty]*len(str)
 
 

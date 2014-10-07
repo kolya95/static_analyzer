@@ -1,4 +1,4 @@
-""" static analyzer for python 3"""
+﻿""" static analyzer for python 3"""
 
 import keyword
 import token
@@ -795,7 +795,7 @@ class Error:
 
 
 if __name__ == "__main__":
-    file_str = '/home/kolya/PycharmProjects/static_analyzer/MyTests/test1.py'
+    file_str = '/home/kolya/PycharmProjects/coursepaper/static_analyzer/MyTests/test1.py'
     file = open(file_str, 'r')
     source_code_str = file.read()
     file.close()

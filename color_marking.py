@@ -44,7 +44,15 @@ def set_color_marks_and_ranks(source_code_str):
                 previous_tok_ecol = tok[3][1]
             elif tok[0] == token.STRING:
                 color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
-                color_marks[i].extend([LxConstLiteral]*len(tok[1]))
+                multi_line_list = tok[1].split('\n')
+                for line in multi_line_list:
+                    color_marks.append([])
+                    color_marks[i].extend([LxConstLiteral]*len(line))
+                    line_ranks.append(0)
+                    i+=1
+                del color_marks[len(color_marks)-1]
+                del line_ranks[len(line_ranks)-1]
+                i-=1
                 previous_tok_ecol = tok[3][1]
             elif tok[0] == token.OP:
                 color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
@@ -67,12 +75,12 @@ def set_color_marks_and_ranks(source_code_str):
                 i += 1
                 previous_tok_ecol = 0
             elif tok[0] == token.NUMBER:
-                color_marks[i].extend([LxConstInteger]*len(tok[1]))
                 color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                color_marks[i].extend([LxConstInteger]*len(tok[1]))
                 previous_tok_ecol = tok[3][1]
             elif tok[0] == token.COLON:
-                color_marks[i].extend([LxConstInteger]*len(tok[1]))
                 color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                color_marks[i].extend([LxConstInteger]*len(tok[1]))
                 previous_tok_ecol = tok[3][1]
                 line_ranks[len(line_ranks)-1] -= 1
             else:
@@ -80,6 +88,7 @@ def set_color_marks_and_ranks(source_code_str):
                 color_marks[i].extend([LxTypeEmpty]*len(tok[1]))
                 previous_tok_ecol = tok[3][1]
     pair_line_ranks = []
+
 
 
     for i in range(len(line_ranks)):
@@ -101,16 +110,38 @@ def get_ranks():
     return line_ranks
 
 
+GLOBAL_CONSTANT_KWD_COMMA = ("for","if","try","while","def","class","with") #ключевые слова двоеточие после которых повышает rank end у строки
+GLOBAL_CONSTANT_KWD_COMMED = ("else","elif","except","finally")          # уменьшают rank begin у строки
+
+
+
+
+
+
+def is_change_rank(text):
+    tokens = [x for x in tokenize(BytesIO(text.encode('utf-8')).readline)]
+    if tokens[1][1] in GLOBAL_CONSTANT_KWD_COMMA and tokens[len(tokens)-3][1]==':':
+        return (0,1)
+    elif tokens[1][1] in GLOBAL_CONSTANT_KWD_COMMED and tokens[len(tokens)-3][1]==':':
+        return (-1,1)
+    elif tokens[1][1] == "return":
+        return (0,-1)
+    else:
+        return (0,0)
+
 if __name__ == "__main__":
-    file = open('/home/kolya/PycharmProjects/static_analyzer/MyTests/test4.py', 'r')
-    file = open('/home/kolya/PycharmProjects/static_analyzer/color_marking.py', 'r')
+    file = open('/home/kolya/PycharmProjects/coursepaper/static_analyzer/color_marking.py', 'r')
+    file = open('/home/kolya/PycharmProjects/coursepaper/static_analyzer/static_analisys.py', 'r')
+    file = open('/home/kolya/PycharmProjects/coursepaper/static_analyzer/MyTests/test4.py', 'r')
+
     source_code_str = file.read()
     file.close()
-    print(source_code_str)
+    #print(source_code_str)
     str_list = source_code_str.split('\n')
     set_color_marks_and_ranks(source_code_str)
     print( len(str_list) )
     print( len(color_marks) )
+    print( len(line_ranks)  )
     for i in range(len(str_list)):
         if len(str_list[i])!=len(color_marks[i]):
             print("bad news..." + str(i))
@@ -122,7 +153,9 @@ if __name__ == "__main__":
     print(get_colors())
     print(get_ranks())
 
-
+    #tokens = [x for x in tokenize(BytesIO(source_code_str.encode('utf-8')).readline)]
+    #for i in range(len(tokens)):
+    #    print(is_change_rank(tokens[i][4]))
 
 
 
