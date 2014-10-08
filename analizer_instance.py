@@ -72,7 +72,7 @@ def set_source_text(text):
     #
     # Пример:
     # def sign(x):          # rank = ( 0, +1) # увеличиваем отступ следующей строки, поскольку в конце строки двоеточие
-    #     print(x)          # rank = ( 0,  0) # отступы не меняются
+    # print(x)          # rank = ( 0,  0) # отступы не меняются
     #     if x < 0:         # rank = ( 0, +1) # увеличиваем отступ следующей строки, поскольку в конце строки двоеточие
     #         return -1     # rank = ( 0, -1) # в блоке кода после return не может быть ничего, поэтому уменьшаем отступ
     #     elif x > 0: return 1  # rank = ( 0,  0) # в данном случае elif ... : и return компенсируют друг друга
@@ -146,23 +146,43 @@ def get_line_property(line_no, line_text):
     """
     assert isinstance(line_no, int)
     assert isinstance(line_text, str)
-    global  LINE_RANKS
+    global LINE_RANKS
     changes = color_marking.is_change_rank(line_text)
     print(LINE_RANKS[line_no])
-    LINE_RANKS[line_no] = (changes[0]+LINE_RANKS[line_no][0],changes[1]+LINE_RANKS[line_no][1])
+    LINE_RANKS[line_no] = (changes[0] + LINE_RANKS[line_no][0], changes[1] + LINE_RANKS[line_no][1])
     print(LINE_RANKS[line_no])
 
-    return [LxTypeEmpty]*len(str)
+    return [LxTypeEmpty] * len(str)
 
 
+def __run_test(test_name):
+    base = os.path.dirname(os.path.abspath(__file__)) + "/"
+    source_file = open(base + test_name, 'r')
+    set_source_text(source_file.read())
+    source_file.close()
+
+    class LinePropPrintHex(int):
+        def __repr__(self):
+            return "0x%x" % self
+
+    lines = SOURCE_TEXT.split('\n')
+    ranks = get_line_ranks()
+    props = [[LinePropPrintHex(item) for item in row] for row in get_line_properties()]
+
+    assert len(lines) == len(ranks) == len(props)
+    print("\nBegin test ", test_name, "========================")
+    for no in range(0, len(lines)):
+        out = "{:2d}: {:<30} # {:<8} {}".format(no+1, lines[no], ranks[no], props[no])
+        print(out)
+    print("End test ", test_name, "==========================")
 
 if __name__ == "__main__":
-    file = open(os.path.dirname(__file__) + "/MyTests/test5.py", 'r')
-    # VY: нужно использовать относительные имена файлов, а не абсолютные
-
-    SOURCE_TEXT = file.read()
-    file.close()
-    print(SOURCE_TEXT)
-    set_source_text(SOURCE_TEXT)
-    print(get_line_properties())
-    print(get_line_ranks())
+    TESTS = [
+        "MyTests/test1.py",
+        "MyTests/test2.py",
+        "MyTests/test3.py",
+        "MyTests/test4.py",
+        "MyTests/test5.py"
+    ]
+    for test in TESTS:
+        __run_test(test)
