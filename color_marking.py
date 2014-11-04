@@ -1,11 +1,10 @@
-from tokenize import generate_tokens, tokenize
+from tokenize import generate_tokens, tokenize, TokenError
 import keyword
 import token
 from io import BytesIO
 from kumir_constants import *
 import parser
-
-
+import analizer_instance
 SECONDARY_KWD = ("in", "as", "is", "and", "or", "not", "pass", "break", "continue", "return", "else", "elif",
                  "if", "except", "finally", "try", "raise")
 PRIMARY_KWD = ("def", "for", "class", "import", "from", "with", "global", "None", "while", "yield", "nonlocal", "lambda", "assert", "del")
@@ -18,76 +17,104 @@ def set_color_marks_and_ranks(source_code_str):
     global color_marks
     global line_ranks
     color_marks = [[]]
+    pair_line_ranks = []
     line_ranks = [0]
+    previous_tok_ecol = 0
     i = 0
     tokens = tokenize(BytesIO(source_code_str.encode('utf-8')).readline)
     previous_tok_ecol = 0
-    for tok in tokens:
-        # tok[0] -- token type
-        # tok[1] -- token string
-        # tok[2] -- (srow, scol)
-        # tok[3] -- (erow, ecol)
-        # tok[4] -- "logical" line
-        if tok[2] != tok[3] or tok[0] == token.DEDENT or tok[0] == token.NEWLINE:
-            if tok[0] == token.NAME:
-                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
-                if tok[1] in SECONDARY_KWD:
-                    color_marks[i].extend([LxTypeSecondaryKwd]*len(tok[1]))
-                elif tok[1] in PRIMARY_KWD:
-                    color_marks[i].extend([LxTypePrimaryKwd]*len(tok[1]))
-                elif tok[1] == "True":
-                    color_marks[i].extend([LxConstBoolTrue]*len(tok[1]))
-                elif tok[1] == "False":
-                    color_marks[i].extend([LxConstBoolFalse]*len(tok[1]))
-                else:
-                    color_marks[i].extend([LxTypeName]*len(tok[1]))
-                previous_tok_ecol = tok[3][1]
-            elif tok[0] == token.STRING:
-                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
-                multi_line_list = tok[1].split('\n')
-                for line in multi_line_list:
+    try:
+        for tok in tokens:
+            # tok[0] -- token type
+            # tok[1] -- token string
+            # tok[2] -- (srow, scol)
+            # tok[3] -- (erow, ecol)
+            # tok[4] -- "logical" line
+            if tok[2] != tok[3] or tok[0] == token.DEDENT or tok[0] == token.NEWLINE:
+                if tok[0] == token.NAME:
+                    color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                    if tok[1] in SECONDARY_KWD:
+                        color_marks[i].extend([LxTypeSecondaryKwd]*len(tok[1]))
+                    elif tok[1] in PRIMARY_KWD:
+                        color_marks[i].extend([LxTypePrimaryKwd]*len(tok[1]))
+                    elif tok[1] == "True":
+                        color_marks[i].extend([LxConstBoolTrue]*len(tok[1]))
+                    elif tok[1] == "False":
+                        color_marks[i].extend([LxConstBoolFalse]*len(tok[1]))
+                    else:
+                        color_marks[i].extend([LxTypeName]*len(tok[1]))
+                    previous_tok_ecol = tok[3][1]
+                elif tok[0] == token.STRING:
+                    color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                    multi_line_list = tok[1].split('\n')
+                    for line in multi_line_list:
+                        color_marks.append([])
+                        color_marks[i].extend([LxConstLiteral]*len(line))
+                        line_ranks.append(0)
+                        i+=1
+                    del color_marks[len(color_marks)-1]
+                    del line_ranks[len(line_ranks)-1]
+                    i-=1
+                    previous_tok_ecol = tok[3][1]
+                elif tok[0] == token.OP:
+                    color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                    color_marks[i].extend([LxTypeOperator]*len(tok[1]))
+                    previous_tok_ecol = tok[3][1]
+                elif tok[0] == token.N_TOKENS: #comments
+                    color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                    color_marks[i].extend([LxTypeComment]*len(tok[1]))
+                    previous_tok_ecol = tok[3][1]
+                elif tok[0] == token.INDENT:
+                    color_marks[i].extend([LxTypeEmpty]*len(tok[1]))
+                    line_ranks[len(line_ranks)-1] += 1
+                    previous_tok_ecol = tok[3][1]
+                elif tok[0] == token.DEDENT:
+                    line_ranks[len(line_ranks)-1] -= 1
+                    #previous_tok_ecol = tok[3][1]
+                elif tok[0] == token.NEWLINE or tok[0] == 55: #55 -- '\n'
                     color_marks.append([])
-                    color_marks[i].extend([LxConstLiteral]*len(line))
-                    line_ranks.append(0)
-                    i+=1
-                del color_marks[len(color_marks)-1]
-                del line_ranks[len(line_ranks)-1]
-                i-=1
-                previous_tok_ecol = tok[3][1]
-            elif tok[0] == token.OP:
-                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
-                color_marks[i].extend([LxTypeOperator]*len(tok[1]))
-                previous_tok_ecol = tok[3][1]
-            elif tok[0] == token.N_TOKENS: #comments
-                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
-                color_marks[i].extend([LxTypeComment]*len(tok[1]))
-                previous_tok_ecol = tok[3][1]
-            elif tok[0] == token.INDENT:
-                color_marks[i].extend([LxTypeEmpty]*len(tok[1]))
-                line_ranks[len(line_ranks)-1] += 1
-                previous_tok_ecol = tok[3][1]
-            elif tok[0] == token.DEDENT:
-                line_ranks[len(line_ranks)-1] -= 1
-                #previous_tok_ecol = tok[3][1]
-            elif tok[0] == token.NEWLINE or tok[0] == 55: #55 -- '\n'
-                color_marks.append([])
-                line_ranks.append(line_ranks[len(line_ranks)-1])
-                i += 1
-                previous_tok_ecol = 0
-            elif tok[0] == token.NUMBER:
-                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
-                color_marks[i].extend([LxConstInteger]*len(tok[1]))
-                previous_tok_ecol = tok[3][1]
-            elif tok[0] == token.COLON:
-                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
-                color_marks[i].extend([LxConstInteger]*len(tok[1]))
-                previous_tok_ecol = tok[3][1]
-                line_ranks[len(line_ranks)-1] -= 1
-            else:
-                color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
-                color_marks[i].extend([LxTypeEmpty]*len(tok[1]))
-                previous_tok_ecol = tok[3][1]
-    pair_line_ranks = []
+                    line_ranks.append(line_ranks[len(line_ranks)-1])
+                    i += 1
+                    previous_tok_ecol = 0
+                elif tok[0] == token.NUMBER:
+                    color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                    color_marks[i].extend([LxConstInteger]*len(tok[1]))
+                    previous_tok_ecol = tok[3][1]
+                elif tok[0] == token.COLON:
+                    color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                    color_marks[i].extend([LxConstInteger]*len(tok[1]))
+                    previous_tok_ecol = tok[3][1]
+                    line_ranks[len(line_ranks)-1] -= 1
+                elif tok[0] == token.ERRORTOKEN:
+                        color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                        color_marks[i].extend([LxTypeError]*len(tok[1]))
+                        previous_tok_ecol = tok[3][1]
+
+                else:
+                    color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))
+                    color_marks[i].extend([LxTypeEmpty]*len(tok[1]))
+                    previous_tok_ecol = tok[3][1]
+            #global pair_line_ranks
+    except TokenError as err:
+        print(err)
+        if(err.args[0] == 'EOF in multi-line string'):
+            ml = source_code_str.split('\n')
+
+            analizer_instance.ERRORS.append(analizer_instance.Error(err.args[1][0],err.args[1][1],1,"Нет парной \"\"\" " ))
+            color_marks[i].extend((len(ml[i])-err.args[1][0]+3)*[LxTypeError | LxConstLiteral])
+            for k in range(err.args[1][0],len(ml)):
+                print(ml[k])
+                color_marks.append(len(ml[k])*[LxTypeError | LxConstLiteral])
+        elif err.args[0] == 'EOF in multi-line statement':
+            for j in range(len(color_marks[i])):
+                color_marks[i][j] = color_marks[i][j] | LxTypeError
+
+
+        #print((err.args[1]))
+        #color_marks[i].extend([LxTypeError]*len(tok[1]))
+        previous_tok_ecol = tok[3][1]
+
+
 
 
 
@@ -130,9 +157,8 @@ def is_change_rank(text):
         return (0,0)
 
 if __name__ == "__main__":
-    file = open('/home/kolya/PycharmProjects/coursepaper/static_analyzer/color_marking.py', 'r')
-    file = open('/home/kolya/PycharmProjects/coursepaper/static_analyzer/static_analisys.py', 'r')
-    file = open('/home/kolya/PycharmProjects/coursepaper/static_analyzer/MyTests/test4.py', 'r')
+    #file = open('/Users/kolya/PycharmProjects/static_analyzer/color_marking.py', 'r')
+    file = open('/Users/kolya/PycharmProjects/static_analyzer/MyTests/test1.py', 'r')
 
     source_code_str = file.read()
     file.close()

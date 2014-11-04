@@ -1,5 +1,5 @@
-a = 1
-def f():
-    a = 1; a = a + 1
-    a = 3
-f()
+a = [1,2,
+ 3,4
+ klk;l
+asdasda
+sdasd
