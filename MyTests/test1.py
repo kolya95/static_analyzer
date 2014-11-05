@@ -1,5 +1,3 @@
-a = [1,2,
- 3,4
- klk;l
-asdasda
-sdasd
+import os
+os.getsid(9)
+os.vblablab = 1

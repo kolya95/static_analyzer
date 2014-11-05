@@ -5,6 +5,8 @@ from io import BytesIO
 from kumir_constants import *
 import parser
 import analizer_instance
+from static_analisys import GLOBAL_SYMBOL_LIST, Function, Module, Class, static_analisys
+
 SECONDARY_KWD = ("in", "as", "is", "and", "or", "not", "pass", "break", "continue", "return", "else", "elif",
                  "if", "except", "finally", "try", "raise")
 PRIMARY_KWD = ("def", "for", "class", "import", "from", "with", "global", "None", "while", "yield", "nonlocal", "lambda", "assert", "del")
@@ -14,6 +16,7 @@ color_marks = [[]]
 line_ranks = [0]
 
 def set_color_marks_and_ranks(source_code_str):
+    static_analisys(source_code_str)
     global color_marks
     global line_ranks
     color_marks = [[]]
@@ -42,7 +45,18 @@ def set_color_marks_and_ranks(source_code_str):
                     elif tok[1] == "False":
                         color_marks[i].extend([LxConstBoolFalse]*len(tok[1]))
                     else:
-                        color_marks[i].extend([LxTypeName]*len(tok[1]))
+                        for s in GLOBAL_SYMBOL_LIST:
+                            if isinstance(s, Function) and s.name == tok[1]:
+                                color_marks[i].extend([LxNameAlg]*len(tok[1]))
+                                break
+                            elif isinstance(s,Module) and s.name == tok[1]:
+                                color_marks[i].extend([LxNameModule]*len(tok[1]))
+                                break
+                            elif isinstance(s,Class) and s.name == tok[1]:
+                                color_marks[i].extend([LxNameClass]*len(tok[1]))
+                                break
+                        else:
+                            color_marks[i].extend([LxTypeName]*len(tok[1]))
                     previous_tok_ecol = tok[3][1]
                 elif tok[0] == token.STRING:
                     color_marks[i].extend([LxTypeEmpty]*(tok[2][1] - previous_tok_ecol))

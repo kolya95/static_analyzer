@@ -1,5 +1,5 @@
 ﻿""" static analyzer for python 3"""
-
+# -*- coding: utf-8 -*-
 import keyword
 import token
 import parser
@@ -214,16 +214,19 @@ class Callable(Name):
                     except ImportError:
                         print("Import Error, No module named " + module_name)
                         exit()
+                    new_module = Module(module_name)
+                    new_module.SYMBOL_LIST = []
                     syms = inspect.getmembers(module)
                     for sym in syms:
                         if inspect.isfunction(sym[1]):
-                            self.local_names.append(Function(dot_name+'.' + sym[0]))
+                            #new_module.SYMBOL_LIST.append(Function(dot_name+'.' + sym[0]))
+                            new_module.SYMBOL_LIST.append(Function(sym[0]))
                         elif inspect.isbuiltin(sym[1]):
-                            self.local_names.append(Function(dot_name+'.' + sym[0]))
+                            new_module.SYMBOL_LIST.append(Function(sym[0]))
                         elif inspect.ismethod(sym[1]):
                             pass
                         elif inspect.isgeneratorfunction:
-                            self.local_names.append(Function(dot_name+'.' + sym[0]))
+                            new_module.SYMBOL_LIST.append(Function(sym[0]))
                         elif inspect.isgenerator(sym[1]):
                             pass
                         elif inspect.istraceback(sym[1]):
@@ -247,9 +250,10 @@ class Callable(Name):
                         elif inspect.ismemberdescriptor(sym[1]):
                             pass
                         elif inspect.isclass(sym[1]):
-                            self.local_names.append(Class(dot_name+'.' + sym[0], [], []))
+                            new_module.SYMBOL_LIST.append(Class(sym[0], [], []))
                         else:
                             print(sym[0])
+                        self.local_names.append(new_module)
                 else:
                     for j in range(1,len(s1)):
                         import_name(s1[j])
@@ -421,6 +425,7 @@ class Class(BaseModule):
 class Module(BaseModule):
     def __init__(self, name, body=[]):
         BaseModule.__init__(self, name, body)
+        SYMBOL_LIST = []
 
 
 NON_TERMINAL = range(256, 338)  # non terminal symbols of python grammar
@@ -558,16 +563,19 @@ def parse_main(st):
                     exit()
 
                 a = dir(module)
+                new_module = Module(module_name)
+                new_module.SYMBOL_LIST = []
                 syms = inspect.getmembers(module)
                 for sym in syms:
                     if inspect.isfunction(sym[1]):
-                        GLOBAL_SYMBOL_LIST.append(Function(dot_name+'.' + sym[0]))
+                        #new_module.SYMBOL_LIST.append(Function(dot_name+'.' + sym[0]))
+                        new_module.SYMBOL_LIST.append(Function(sym[0]))
                     elif inspect.isbuiltin(sym[1]):
-                        GLOBAL_SYMBOL_LIST.append(Function(dot_name+'.' + sym[0]))
+                        new_module.SYMBOL_LIST.append(Function(sym[0]))
                     elif inspect.ismethod(sym[1]):
                         pass
                     elif inspect.isgeneratorfunction:
-                        GLOBAL_SYMBOL_LIST.append(Function(dot_name+'.' + sym[0]))
+                        new_module.SYMBOL_LIST.append(Function(sym[0]))
                     elif inspect.isgenerator(sym[1]):
                         pass
                     elif inspect.istraceback(sym[1]):
@@ -591,9 +599,10 @@ def parse_main(st):
                     elif inspect.ismemberdescriptor(sym[1]):
                         pass
                     elif inspect.isclass(sym[1]):
-                        GLOBAL_SYMBOL_LIST.append(Class(dot_name+'.' + sym[0], [], []))
+                        new_module.SYMBOL_LIST.append(Class(sym[0], [], []))
                     else:
                         print(sym[0])
+                GLOBAL_SYMBOL_LIST.append(new_module)
             else:
                 for j in range(1,len(s1)):
                     import_name(s1[j])
@@ -792,6 +801,36 @@ class MyError:
             return True
         else:
             return False
+
+
+def static_analisys(source_code_str):
+    try:
+        a = compile(source_code_str, '', 'exec')
+    except Exception as error:
+        if isinstance("", SyntaxError):
+            message = {'type': 'F',
+                       'row': error.lineno,
+                       'column': error.offset,
+                       'text': error.message}
+        else:
+            message = {'type': 'F',
+                       'row': -1,
+                       'column': -1,
+                       'text': str(error)}
+        print(message)
+        exit()
+
+
+    st_main = parser.suite(source_code_str)
+    statements = parser.st2list(st_main, line_info=True, col_info=True)
+
+    parse_main(statements)
+
+
+    for s in GLOBAL_SYMBOL_LIST:
+        if isinstance(s, Function) and len(s.body) >= 1:
+            s.do_all(s.body, GLOBAL_SYMBOL_LIST)
+
 
 
 if __name__ == "__main__":
