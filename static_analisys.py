@@ -818,7 +818,8 @@ def static_analisys(source_code_str):
                        'column': -1,
                        'text': str(error)}
         print(message)
-        exit()
+        #exit()
+        return
 
 
     st_main = parser.suite(source_code_str)

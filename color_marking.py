@@ -5,7 +5,7 @@ from io import BytesIO
 from kumir_constants import *
 import parser
 import analizer_instance
-from static_analisys import GLOBAL_SYMBOL_LIST, Function, Module, Class, static_analisys
+from static_analisys import GLOBAL_SYMBOL_LIST, Function, Module, Class, static_analisys, Variable
 
 SECONDARY_KWD = ("in", "as", "is", "and", "or", "not", "pass", "break", "continue", "return", "else", "elif",
                  "if", "except", "finally", "try", "raise")
@@ -47,13 +47,16 @@ def set_color_marks_and_ranks(source_code_str):
                     else:
                         for s in GLOBAL_SYMBOL_LIST:
                             if isinstance(s, Function) and s.name == tok[1]:
-                                color_marks[i].extend([LxNameAlg]*len(tok[1]))
+                                color_marks[i].extend([LxNameAlg & LxTypeName]*len(tok[1]))
                                 break
                             elif isinstance(s,Module) and s.name == tok[1]:
-                                color_marks[i].extend([LxNameModule]*len(tok[1]))
+                                color_marks[i].extend([LxNameModule & LxTypeName]*len(tok[1]))
                                 break
                             elif isinstance(s,Class) and s.name == tok[1]:
-                                color_marks[i].extend([LxNameClass]*len(tok[1]))
+                                color_marks[i].extend([LxNameClass & LxTypeName]*len(tok[1]))
+                                break
+                            elif isinstance(s,Variable) and s.name == tok[1]:
+                                color_marks[i].extend([LxNameVar & LxTypeName]*len(tok[1]))
                                 break
                         else:
                             color_marks[i].extend([LxTypeName]*len(tok[1]))
