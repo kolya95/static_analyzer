@@ -795,10 +795,12 @@ class MyError:
 
 
 if __name__ == "__main__":
-    file_str = '/home/kolya/PycharmProjects/coursepaper/static_analyzer/MyTests/test1.py'
-    file = open(file_str, 'r')
-    source_code_str = file.read()
-    file.close()
+    import os
+    base = os.path.dirname(os.path.abspath(__file__)) + "/"
+    test_name = "MyTests/test1.py"
+    source_file = open(base + test_name, 'r')
+    source_code_str = source_file.read()
+    source_file.close()
 
 
     try:

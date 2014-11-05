@@ -157,12 +157,13 @@ def is_change_rank(text):
         return (0,0)
 
 if __name__ == "__main__":
-    #file = open('/Users/kolya/PycharmProjects/static_analyzer/color_marking.py', 'r')
-    file = open('/Users/kolya/PycharmProjects/static_analyzer/MyTests/test1.py', 'r')
+    import os
+    base = os.path.dirname(os.path.abspath(__file__)) + "/"
+    test_name = "MyTests/test1.py"
+    source_file = open(base + test_name, 'r')
+    source_code_str = source_file.read()
+    source_file.close()
 
-    source_code_str = file.read()
-    file.close()
-    #print(source_code_str)
     str_list = source_code_str.split('\n')
     set_color_marks_and_ranks(source_code_str)
     print( len(str_list) )
