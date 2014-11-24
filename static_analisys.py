@@ -803,7 +803,7 @@ class MyError:
             return False
 
 
-def static_analisys(source_code_str):
+def run_static_analisys(source_code_str):
     try:
         a = compile(source_code_str, '', 'exec')
     except Exception as error:
