@@ -20,6 +20,8 @@ class Variable(Name):
     """
     def __init__(self, name):
         Name.__init__(self, name)
+        self.initialized = True
+
 
 
 class Callable(Name):
@@ -53,6 +55,8 @@ class Callable(Name):
 
         self.global_used = []
 
+        self.as_global = []
+
     def do_all(self, st, visible):
         self.parse(st, visible)
         self.local_variable()
@@ -61,9 +65,15 @@ class Callable(Name):
                 s.do_all(s.body, self.local_names)
                 s.local_variable()
 
+    def is_as_global(self,v):
+        for sym in self.as_global:
+            if sym.name == v.name:
+                return True
+        return False
+
     def parse_args(self, st, local):
         if st[0] in NON_TERMINAL:
-            if st[0] == 265:
+            if st[0] == 265 and not self.is_as_global(Variable(st[1][1])):
                 self.local_names.append(Variable(st[1][1]))
             else:
                 for j in range(1, len(st)):
@@ -74,7 +84,7 @@ class Callable(Name):
     def local_variable(self):
             for used in self.global_used:
                 for var in self.local_names:
-                    if used[0].name == var.name:
+                    if used[0].name == var.name and (not self.is_as_global(var)):
                         err = MyError(used[1], used[2], "error, use local variable before defining" + " line " + str(used[1]) + " position " + str(used[2]))
                         if err not in ERROR_LIST:
                             ERROR_LIST.append(err)
@@ -109,7 +119,7 @@ class Callable(Name):
                         parse_right_part(st[j])
 
         def is_global_identified(sym):
-            for s in GLOBAL_SYMBOL_LIST + self.visible_names:
+            for s in GLOBAL_SYMBOL_LIST + self.visible_names + self.as_global:
                 if sym.name == s.name:
                     return True
             return False
@@ -159,7 +169,7 @@ class Callable(Name):
 
         def add_var(st):
             if st[0] == 320 and not keyword.iskeyword(st[1][1]):
-                if not is_local_identified(Variable(st[1][1])):
+                if not is_local_identified(Variable(st[1][1])) and not self.is_as_global(Variable(st[1][1])):
                     self.local_names.append(Variable(st[1][1]))
             else:
                 for j in range(1,len(st)):
@@ -385,7 +395,11 @@ class Callable(Name):
             elif st[0] == 290:
                 for j in range(2, len(st)):
                     if st[j][0] == 1:
-                        GLOBAL_SYMBOL_LIST.append(Variable(st[j][1]))
+                        globvar = Variable(st[j][1])
+                        globvar.initialized = False
+                        self.as_global.append(globvar)
+                        if not is_global_identified(globvar):
+                            GLOBAL_SYMBOL_LIST.append(globvar)
             elif st[0] == 282:
                 parse_import(st[1])
             else:
@@ -467,6 +481,8 @@ def parse_main(st):
                 err = MyError(st[1][2], st[1][3], "error, undefined variable" + " line " + str(st[1][2]) + " position " + str(st[1][3]))
                 if err not in ERROR_LIST:
                     ERROR_LIST.append(err)
+            elif (st[0] == 320) and len(st)>2 and (st[2][0]==321):
+                parse_compound_stmt(st[2])
             else:
                 for j in range(1, len(st)):
                     parse_right_part(st[j])
@@ -525,6 +541,10 @@ def parse_main(st):
             GLOBAL_SYMBOL_LIST.append(Class(st[2][1],st))
         elif st[0] == 294:
             parse(st)
+        elif st[0] == 321:
+            add_var(st[2][2])
+            parse_right_part(st[1])
+            parse_right_part(st[2][4])
         else:
             parse(st)
 
@@ -774,7 +794,10 @@ def parse_main(st):
             elif st[0] == 290:
                 for j in range(2, len(st)):
                     if st[j][0] == 1:
-                        GLOBAL_SYMBOL_LIST.append(Variable(st[j][1]))
+                        globvar = Variable(st[j][1])
+                        globvar.initialized = False
+                        if (globvar not in GLOBAL_SYMBOL_LIST) and (Variable(st[j][1]) not in GLOBAL_SYMBOL_LIST):
+                            GLOBAL_SYMBOL_LIST.append(globvar)
             elif st[0] == 282:
                 parse_import(st[1])
             else:
