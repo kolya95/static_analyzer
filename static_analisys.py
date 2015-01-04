@@ -114,6 +114,8 @@ class Callable(Name):
                     err = MyError(st[1][2], st[1][3], "error, undefined variable" + " line " + str(st[1][2]) + " position " + str(st[1][3]))
                     if err not in ERROR_LIST:
                         ERROR_LIST.append(err)
+                elif (st[0] == 320) and len(st)>2 and (st[2][0]==321):
+                    parse_compound_stmt(st[2])
                 else:
                     for j in range(1,len(st)):
                         parse_right_part(st[j])
@@ -182,12 +184,17 @@ class Callable(Name):
             if st[0] == 262:
                 self.local_names.append(Function(st[2][1], visible + self.local_names, GLOBAL_SYMBOL_LIST, [], st[5], st[3]))
                 self.local_names[len(self.local_names)-1].parse_args(self.local_names[len(self.local_names)-1].args, self.local_names[len(self.local_names)-1].local_names)
+                visible.append(self.local_names[len(self.local_names)-1])
             elif st[0] == 296:
                 parse_right_part(st[4])
                 add_var(st[2])
                 self.parse(st[6], self.visible_names)
             elif st[0] == 329:
                 GLOBAL_SYMBOL_LIST.append(Class(st[2][1], st))
+            elif st[0] == 321:
+                add_var(st[2][2])
+                parse_right_part(st[1])
+                parse_right_part(st[2][4])
             else:
                 self.parse(st, self.visible_names + self.local_names)
 
