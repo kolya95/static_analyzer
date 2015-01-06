@@ -409,6 +409,9 @@ class Callable(Name):
                             GLOBAL_SYMBOL_LIST.append(globvar)
             elif st[0] == 282:
                 parse_import(st[1])
+            elif st[0] == 300 and len(st) == 5:
+                GLOBAL_SYMBOL_LIST.append(Variable(st[4][1])) # тут должно быть возможно не определена
+                pass
             else:
                 for j in range(1, len(st)):
                     if st[j][0] == 279:
@@ -548,7 +551,7 @@ def parse_main(st):
             GLOBAL_SYMBOL_LIST.append(Class(st[2][1],st))
         elif st[0] == 294:
             parse(st)
-        elif st[0] == 321:
+        elif st[0] == 321 and len(st)>2:
             add_var(st[2][2])
             parse_right_part(st[1])
             parse_right_part(st[2][4])
@@ -603,6 +606,7 @@ def parse_main(st):
                         pass
                     elif inspect.isgeneratorfunction:
                         new_module.SYMBOL_LIST.append(Function(sym[0]))
+                        #new_module.SYMBOL_LIST.append(Variable(sym[0]))
                     elif inspect.isgenerator(sym[1]):
                         pass
                     elif inspect.istraceback(sym[1]):
@@ -807,6 +811,8 @@ def parse_main(st):
                             GLOBAL_SYMBOL_LIST.append(globvar)
             elif st[0] == 282:
                 parse_import(st[1])
+            elif st[0] == 300 and len(st) == 5:
+                GLOBAL_SYMBOL_LIST.append(Variable(st[4][1])) # тут должно быть возможно не определена
             else:
                 for j in range(1, len(st)):
                     if st[j][0] == 279:
@@ -851,7 +857,7 @@ def run_static_analisys(source_code_str):
         #exit()
         return
 
-
+    GLOBAL_SYMBOL_LIST.append(Variable("__file__"))
     st_main = parser.suite(source_code_str)
     statements = parser.st2list(st_main, line_info=True, col_info=True)
 
@@ -867,7 +873,7 @@ def run_static_analisys(source_code_str):
 if __name__ == "__main__":
     import os
     base = os.path.dirname(os.path.abspath(__file__)) + "/"
-    test_name = "MyTests/test1.py"
+    test_name = "MyTests/test2.py"
     source_file = open(base + test_name, 'r')
     source_code_str = source_file.read()
     source_file.close()
@@ -890,6 +896,7 @@ if __name__ == "__main__":
         exit()
 
 
+    GLOBAL_SYMBOL_LIST.append(Variable("__file__"))
     st_main = parser.suite(source_code_str)
     statements = parser.st2list(st_main, line_info=True, col_info=True)
 
