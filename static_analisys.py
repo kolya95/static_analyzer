@@ -173,7 +173,7 @@ class Callable(Name):
 
 
         def add_var(st):
-            if st[0] == 320 and not keyword.iskeyword(st[1][1]):
+            if st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0]==token.NAME:
                 if not is_local_identified(Variable(st[1][1])) and not self.is_as_global(Variable(st[1][1])):
                     self.local_names.append(Variable(st[1][1]))
             else:
@@ -390,6 +390,7 @@ class Callable(Name):
 
 
 
+
         if len(st) > 0 and st[0] in NON_TERMINAL:
             if st[0] == 271 and len(st) == 4 and st[2][0] != 273:
                 parse_right_part(st[3])
@@ -400,8 +401,9 @@ class Callable(Name):
                 parse_right_part(st[3])
             elif st[0] == 271 and len(st) == 2:
                 var_or_call(st,st)
-            elif st[0] == 320 and not keyword.iskeyword(st[1][1]):
+            elif st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0] == token.NAME and not is_local_identified(Variable(st[1][1])):
                 self.local_names.append(Variable(st[1][1]))
+                #print(st[1][1])
             elif st[0] == 293:
                 parse_compound_stmt(st[1], visible)
             elif st[0] == 290:
@@ -539,7 +541,7 @@ def parse_main(st):
                     var_or_call(st[j],st271)
 
     def add_var(st):
-        if st[0] == 320 and not keyword.iskeyword(st[1][1]):
+        if st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0] == token.NAME:
             GLOBAL_SYMBOL_LIST.append(Variable(st[1][1]))
         else:
             for j in range(1,len(st)):
@@ -808,7 +810,7 @@ def parse_main(st):
                 parse_right_part(st[3])
             elif st[0] == 271 and len(st) == 2:
                 var_or_call(st, st)
-            elif st[0] == 320 and not keyword.iskeyword(st[1][1]):
+            elif st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0] == token.NAME and not is_identified(Variable(st[1][1])):
                 GLOBAL_SYMBOL_LIST.append(Variable(st[1][1]))
             elif st[0] == 293:
                 parse_compound_stmt(st[1])
