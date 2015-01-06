@@ -115,7 +115,7 @@ class Callable(Name):
                     if err not in ERROR_LIST:
                         ERROR_LIST.append(err)
                 elif (st[0] == 320) and len(st)>2 and (st[2][0]==321):
-                    parse_compound_stmt(st[2])
+                    parse_compound_stmt(st[2],visible)
                 elif st[0] == 331 and len(st) == 4:
                     add_var(st[1])
                     parse_right_part(st[3])
@@ -194,7 +194,7 @@ class Callable(Name):
                 self.parse(st[6], self.visible_names)
             elif st[0] == 329:
                 GLOBAL_SYMBOL_LIST.append(Class(st[2][1], st))
-            elif st[0] == 321:
+            elif st[0] == 321 and len(st)>2 and st[2] == 333:
                 add_var(st[2][2])
                 parse_right_part(st[1])
                 parse_right_part(st[2][4])
@@ -215,7 +215,9 @@ class Callable(Name):
                 except ImportError:
                     print("Import Error, No module named " + module_name)
                     exit()
-                import_from(st[4], module)
+                for counter in range(len(st[4])):
+                    if not isinstance(st[4][counter],int) and st[4][counter][0] == 285:
+                        import_from(st[4][counter], module)
 
         def import_name(s1):
             if s1[0] in NON_TERMINAL:
@@ -282,25 +284,25 @@ class Callable(Name):
             syms = inspect.getmembers(module)
             str_syms = dir(module)
             name_as = ""
-            if len(s1[1]) == 4:
-                name_as = s1[1][3][1]
+            if len(s1) == 4:
+                name_as = s1[3][1]
 
-            if s1[1] == '*':
+            if s1 == '*':
                 for sym in syms:
                     if inspect.isfunction(sym[1]):
-                        if len(s1[1]) == 4:
+                        if len(s1) == 4:
                             self.local_names.append(Function(name_as))
                         else:
                             self.local_names.append(Function(sym[0]))
                     elif inspect.isbuiltin(sym[1]):
-                        if len(s1[1]) == 4:
+                        if len(s1) == 4:
                             self.local_names.append(Function(name_as))
                         else:
                             self.local_names.append(Function(sym[0]))
                     elif inspect.ismethod(sym[1]):
                         pass
                     elif inspect.isgeneratorfunction:
-                        if len(s1[1]) == 4:
+                        if len(s1) == 4:
                             self.local_names.append(Function(name_as))
                         else:
                             self.local_names.append(Function(sym[0]))
@@ -327,32 +329,32 @@ class Callable(Name):
                     elif inspect.ismemberdescriptor(sym[1]):
                         pass
                     elif inspect.isclass(sym[1]):
-                        if len(s1[1]) == 4:
+                        if len(s1) == 4:
                             self.local_names.append(Class(name_as))
                         else:
                             self.local_names.append(Class(sym[0]))
                     else:
                         print(sym[0])
-            elif not (s1[1][1][1] in str_syms):
+            elif not (s1[1][1] in str_syms):
                 print("import error")
                 exit()
             else:
                 for sym in syms:
-                    if sym[0] == s1[1][1][1]:
+                    if sym[0] == s1[1][1]:
                         if inspect.isfunction(sym[1]):
-                            if len(s1[1]) == 4:
+                            if len(s1) == 4:
                                 self.local_names.append(Function(name_as))
                             else:
                                 self.local_names.append(Function(sym[0]))
                         elif inspect.isbuiltin(sym[1]):
-                            if len(s1[1]) == 4:
+                            if len(s1) == 4:
                                 self.local_names.append(Function(name_as))
                             else:
                                 self.local_names.append(Function(sym[0]))
                         elif inspect.ismethod(sym[1]):
                             pass
                         elif inspect.isgeneratorfunction:
-                            if len(s1[1]) == 4:
+                            if len(s1) == 4:
                                 self.local_names.append(Function(name_as))
                             else:
                                 self.local_names.append(Function(sym[0]))
@@ -379,7 +381,7 @@ class Callable(Name):
                         elif inspect.ismemberdescriptor(sym[1]):
                             pass
                         elif inspect.isclass(sym[1]):
-                            if len(s1[1]) == 4:
+                            if len(s1) == 4:
                                 self.local_names.append(Class(name_as))
                             else:
                                 self.local_names.append(Class(sym[0]))
@@ -557,7 +559,7 @@ def parse_main(st):
             GLOBAL_SYMBOL_LIST.append(Class(st[2][1],st))
         elif st[0] == 294:
             parse(st)
-        elif st[0] == 321 and len(st)>2:
+        elif st[0] == 321 and len(st)>2 and st[2] == 333:
             add_var(st[2][2])
             parse_right_part(st[1])
             parse_right_part(st[2][4])
@@ -578,7 +580,9 @@ def parse_main(st):
             except ImportError:
                 print("Import Error, No module named " + module_name)
                 exit()
-            import_from(st[4], module)
+            for counter in range(len(st[4])):
+                if not isinstance(st[4][counter],int) and st[4][counter][0] == 285:
+                    import_from(st[4][counter], module)
 
     def import_name(s1):
         if s1[0] in NON_TERMINAL:
@@ -648,25 +652,25 @@ def parse_main(st):
         syms = inspect.getmembers(module)
         str_syms = dir(module)
         name_as = ""
-        if len(s1[1]) == 4:
-            name_as = s1[1][3][1]
+        if len(s1) == 4:
+            name_as = s1[3][1]
 
         if s1[1] == '*':
             for sym in syms:
                 if inspect.isfunction(sym[1]):
-                    if len(s1[1]) == 4:
+                    if len(s1) == 4:
                         GLOBAL_SYMBOL_LIST.append(Function(name_as))
                     else:
                         GLOBAL_SYMBOL_LIST.append(Function(sym[0]))
                 elif inspect.isbuiltin(sym[1]):
-                    if len(s1[1]) == 4:
+                    if len(s1) == 4:
                         GLOBAL_SYMBOL_LIST.append(Function(name_as))
                     else:
                         GLOBAL_SYMBOL_LIST.append(Function(sym[0]))
                 elif inspect.ismethod(sym[1]):
                     pass
                 elif inspect.isgeneratorfunction:
-                    if len(s1[1]) == 4:
+                    if len(s1) == 4:
                         GLOBAL_SYMBOL_LIST.append(Function(name_as))
                     else:
                         GLOBAL_SYMBOL_LIST.append(Function(sym[0]))
@@ -693,32 +697,32 @@ def parse_main(st):
                 elif inspect.ismemberdescriptor(sym[1]):
                     pass
                 elif inspect.isclass(sym[1]):
-                    if len(s1[1]) == 4:
+                    if len(s1) == 4:
                         GLOBAL_SYMBOL_LIST.append(Class(name_as))
                     else:
                         GLOBAL_SYMBOL_LIST.append(Class(sym[0]))
                 else:
                     print(sym[0])
-        elif not (s1[1][1][1] in str_syms):
+        elif not (s1[1][1] in str_syms):
             print("import error")
             exit()
         else:
             for sym in syms:
-                if sym[0] == s1[1][1][1]:
+                if sym[0] == s1[1][1]:
                     if inspect.isfunction(sym[1]):
-                        if len(s1[1]) == 4:
+                        if len(s1) == 4:
                             GLOBAL_SYMBOL_LIST.append(Function(name_as))
                         else:
                             GLOBAL_SYMBOL_LIST.append(Function(sym[0]))
                     elif inspect.isbuiltin(sym[1]):
-                        if len(s1[1]) == 4:
+                        if len(s1) == 4:
                             GLOBAL_SYMBOL_LIST.append(Function(name_as))
                         else:
                             GLOBAL_SYMBOL_LIST.append(Function(sym[0]))
                     elif inspect.ismethod(sym[1]):
                         pass
                     elif inspect.isgeneratorfunction:
-                        if len(s1[1]) == 4:
+                        if len(s1) == 4:
                             GLOBAL_SYMBOL_LIST.append(Function(name_as))
                         else:
                             GLOBAL_SYMBOL_LIST.append(Function(sym[0]))
@@ -745,7 +749,7 @@ def parse_main(st):
                     elif inspect.ismemberdescriptor(sym[1]):
                         pass
                     elif inspect.isclass(sym[1]):
-                        if len(s1[1]) == 4:
+                        if len(s1) == 4:
                             GLOBAL_SYMBOL_LIST.append(Class(name_as))
                         else:
                             GLOBAL_SYMBOL_LIST.append(Class(sym[0]))
