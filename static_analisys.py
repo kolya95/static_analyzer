@@ -116,6 +116,9 @@ class Callable(Name):
                         ERROR_LIST.append(err)
                 elif (st[0] == 320) and len(st)>2 and (st[2][0]==321):
                     parse_compound_stmt(st[2])
+                elif st[0] == 331 and len(st) == 4:
+                    add_var(st[1])
+                    parse_right_part(st[3])
                 else:
                     for j in range(1,len(st)):
                         parse_right_part(st[j])
@@ -493,6 +496,9 @@ def parse_main(st):
                     ERROR_LIST.append(err)
             elif (st[0] == 320) and len(st)>2 and (st[2][0]==321):
                 parse_compound_stmt(st[2])
+            elif st[0] == 331 and len(st) == 4:
+                add_var(st[1])
+                parse_right_part(st[3])
             else:
                 for j in range(1, len(st)):
                     parse_right_part(st[j])
