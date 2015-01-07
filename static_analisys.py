@@ -143,6 +143,8 @@ class Callable(Name):
                         for name in st[2]:
                             if not isinstance(name, int):
                                 v_name += name[1]
+                    else:
+                        parse_right_part(st[2])
                     sym = Name(v_name)
                     if is_local_identified(sym):
                         for s in self.local_names:
@@ -176,6 +178,10 @@ class Callable(Name):
             if st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0]==token.NAME:
                 if not is_local_identified(Variable(st[1][1])) and not self.is_as_global(Variable(st[1][1])):
                     self.local_names.append(Variable(st[1][1]))
+            elif st[0] == 319 and len(st)>2 and st[2][0] == 322:
+                if not is_global_identified(Variable(st[1][1][1])) and not is_local_identified(Variable(st[1][1][1])):
+                    self.local_names.append(Variable(st[1][1][1]))
+                parse_right_part(st[2])
             else:
                 for j in range(1,len(st)):
                     if st[j][0] in NON_TERMINAL:
@@ -395,6 +401,8 @@ class Callable(Name):
             if st[0] == 271 and len(st) == 4 and st[2][0] != 273:
                 parse_right_part(st[3])
                 self.parse(st[1], visible)
+            elif st[0] == 323:
+                parse_right_part(st)
             elif st[0] == 271 and len(st) == 4 and st[2][0] == 273:
                 parse_right_part(st[1])
                 add_var(st[1])
@@ -521,6 +529,8 @@ def parse_main(st):
                     for name in st[2]:
                         if not isinstance(name, int):
                             v_name += name[1]
+                else:
+                    parse_right_part(st[2])
                 sym = Name(v_name)
                 if is_identified(sym):
                     for s in GLOBAL_SYMBOL_LIST:
@@ -804,6 +814,8 @@ def parse_main(st):
             if st[0] == 271 and len(st) == 4 and st[2][0] != 273:
                 parse_right_part(st[3])
                 parse(st[1])
+            elif st[0] == 323:
+                parse_right_part(st)
             elif st[0] == 271 and len(st) == 4 and st[2][0] == 273:
                 parse_right_part(st[1])
                 parse_right_part(st[3])
@@ -884,7 +896,7 @@ def run_static_analisys(source_code_str):
 if __name__ == "__main__":
     import os
     base = os.path.dirname(os.path.abspath(__file__)) + "/"
-    test_name = "MyTests/test3.py"
+    test_name = "MyTests/test1.py"
     source_file = open(base + test_name, 'r')
     source_code_str = source_file.read()
     source_file.close()
