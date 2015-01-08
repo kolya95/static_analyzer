@@ -124,7 +124,7 @@ class Callable(Name):
                         parse_right_part(st[j])
 
         def is_global_identified(sym):
-            for s in GLOBAL_SYMBOL_LIST + self.visible_names + self.as_global:
+            for s in GLOBAL_SYMBOL_LIST + self.visible_names:
                 if sym.name == s.name:
                     return True
             return False
@@ -418,7 +418,7 @@ class Callable(Name):
                 for j in range(2, len(st)):
                     if st[j][0] == 1:
                         globvar = Variable(st[j][1])
-                        globvar.initialized = False
+                        #globvar.initialized = False
                         self.as_global.append(globvar)
                         if not is_global_identified(globvar):
                             GLOBAL_SYMBOL_LIST.append(globvar)
