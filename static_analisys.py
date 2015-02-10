@@ -912,7 +912,7 @@ def clear_errors():
 if __name__ == "__main__":
     import os
     base = os.path.dirname(os.path.abspath(__file__)) + "/"
-    test_name = "MyTests/test1.py"
+    test_name = "MyTests/arguments_types_mismatch.py"
     source_file = open(base + test_name, 'r')
     source_code_str = source_file.read()
     source_file.close()
@@ -948,4 +948,4 @@ if __name__ == "__main__":
 
 
     for err in ERROR_LIST:
-        print(err.info)
+        print(err.message + ", line "+str( err.line_no)+", column " + str( err.start_pos))
