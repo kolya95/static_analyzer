@@ -20,24 +20,4 @@ class TypeIndex(Enum):
     memoryview = 14
 
 
-int_methods = [
-    MethodDescription('__abs__', None, TypeIndex.int.value),
-    MethodDescription('__add__', [(None,  TypeIndex.int.value), (None,  TypeIndex.bool.value)], TypeIndex.int.value),
-    MethodDescription('__and__', [(None,  TypeIndex.int.value), (None,  TypeIndex.bool.value)], TypeIndex.int.value),
-    MethodDescription('__bool__', None, TypeIndex.bool.value),
-    MethodDescription('__ceil__', None, TypeIndex.int.value),
-    MethodDescription('__class__', [(None,  TypeIndex.int.value), (None,  TypeIndex.bool.value), (None, TypeIndex.string.value)], TypeIndex.int.value),
-    MethodDescription('__delattr__', [(None, TypeIndex.string.value)], None),  #????
-    MethodDescription('__dir__', None, TypeIndex.list.value),
-    MethodDescription('__divmod__', [(None,  TypeIndex.int.value), (None,  TypeIndex.bool.value)], TypeIndex.tuple.value),
-    # __doc__ -- не метод, описывать надо?
-    MethodDescription('__eq__', [(None,  TypeIndex.int.value), (None,  TypeIndex.bool.value)], TypeIndex.bool.value),
-    MethodDescription('__float__', None, TypeIndex.float.value),
-    MethodDescription('__floor__', None, TypeIndex.int.value),
-
-
-
-]
-int_description = TypeTableElement("int", int_methods)
-
-
+import inspect
