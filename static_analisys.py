@@ -8,6 +8,8 @@ import inspect
 
 import analizer_instance
 
+
+from parse_csv import type_IDS
 class Name:
     """ super class for all names (variables, functions etc)
     """
@@ -19,10 +21,14 @@ class Name:
 class Variable(Name):
     """ class for variables
     """
-    def __init__(self, name):
+    def __init__(self, name, typeID=type_IDS['UNDEFINED']):
         Name.__init__(self, name)
         self.initialized = True
+        self.type = typeID
 
+    def __eq__(self, other):
+        if self.name == other.name:
+            return True
 
 
 class Callable(Name):
@@ -91,7 +97,7 @@ class Callable(Name):
                         if err not in ERROR_LIST:
                             ERROR_LIST.append(err)
 
-    def parse(self, st, visible):
+    def parse(self, st, visible, type_var=type_IDS['UNDEFINED']):
         """ parses function body"""
 
 
@@ -121,7 +127,7 @@ class Callable(Name):
                 elif (st[0] == 320) and len(st)>2 and (st[2][0]==321):
                     parse_compound_stmt(st[2],visible)
                 elif st[0] == 331 and len(st) == 4:
-                    add_var(st[1])
+                    add_var(st[1], type_var)
                     parse_right_part(st[3])
                 else:
                     for j in range(1,len(st)):
@@ -179,18 +185,18 @@ class Callable(Name):
                         var_or_call(st[j],st271)
 
 
-        def add_var(st):
+        def add_var(st, type_var=type_IDS['UNDEFINED']):
             if st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0]==token.NAME:
-                if not is_local_identified(Variable(st[1][1])) and not self.is_as_global(Variable(st[1][1])):
-                    self.local_names.append(Variable(st[1][1]))
+                if not is_local_identified(Variable(st[1][1], type_var)) and not self.is_as_global(Variable(st[1][1], type_var)):
+                    self.local_names.append(Variable(st[1][1], type_var))
             elif st[0] == 319 and len(st)>2 and st[2][0] == 322:
-                if not is_global_identified(Variable(st[1][1][1])) and not is_local_identified(Variable(st[1][1][1])):
-                    self.local_names.append(Variable(st[1][1][1]))
+                if not is_global_identified(Variable(st[1][1][1], type_var)) and not is_local_identified(Variable(st[1][1][1], type_var)):
+                    self.local_names.append(Variable(st[1][1][1], type_var))
                 parse_right_part(st[2])
             else:
                 for j in range(1,len(st)):
                     if st[j][0] in NON_TERMINAL:
-                        add_var(st[j])
+                        add_var(st[j], type_var)
 
 
 
@@ -201,12 +207,12 @@ class Callable(Name):
                 visible.append(self.local_names[len(self.local_names)-1])
             elif st[0] == 296:
                 parse_right_part(st[4])
-                add_var(st[2])
+                add_var(st[2], type_var)
                 self.parse(st[6], self.visible_names)
             elif st[0] == 329:
                 GLOBAL_SYMBOL_LIST.append(Class(st[2][1], st))
             elif st[0] == 321 and len(st)>2 and st[2] == 333:
-                add_var(st[2][2])
+                add_var(st[2][2], type_var)
                 parse_right_part(st[1])
                 parse_right_part(st[2][4])
             elif st[0] == 294:
@@ -405,17 +411,18 @@ class Callable(Name):
         if len(st) > 0 and st[0] in NON_TERMINAL:
             if st[0] == 271 and len(st) == 4 and st[2][0] != 273:
                 parse_right_part(st[3])
-                self.parse(st[1], visible)
+                r = parse_type_of_arith_expr(st[3], GLOBAL_SYMBOL_LIST + self.local_names)
+                self.parse(st[1], visible, r)
             elif st[0] == 323:
                 parse_right_part(st)
             elif st[0] == 271 and len(st) == 4 and st[2][0] == 273:
                 parse_right_part(st[1])
-                add_var(st[1])
+                add_var(st[1], type_var)
                 parse_right_part(st[3])
             elif st[0] == 271 and len(st) == 2:
                 var_or_call(st,st)
             elif st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0] == token.NAME and not is_local_identified(Variable(st[1][1])):
-                self.local_names.append(Variable(st[1][1]))
+                self.local_names.append(Variable(st[1][1], type_var))
                 #print(st[1][1])
             elif st[0] == 293:
                 parse_compound_stmt(st[1], visible)
@@ -435,9 +442,17 @@ class Callable(Name):
             else:
                 for j in range(1, len(st)):
                     if st[j][0] == 279:
+
                         parse_right_part(st[j])
+                        r = parse_type_of_arith_expr(st[j][2], self.visible_names+self.local_names)
+                        self.return_type = r
+                    elif  (st[j][0] == 271 and st[j][2][1]=='='):
+                        r = parse_type_of_arith_expr(st[j][3], self.visible_names+self.local_names)
+                        self.return_type = r
+                        parse_right_part(st[j][3])
+                        add_var(st[j][1], r)
                     else:
-                        self.parse(st[j], visible)
+                        self.parse(st[j], visible, type_var)
         else:
             return
 
@@ -491,8 +506,145 @@ def parse_args(self, st, local):
     else:
         return
 
+def parse_type_of_right_part(st):
+    if st[0] == 316:
+        return parse_type_of_arith_expr(st)
+    else:
+        return parse_type_of_right_part(st[1])
+
+
+from parse_csv import description
+op_descr={
+    '+': '__add__',
+    '-': '__sub__',
+    '/': '__div__',
+    '*': '__mul__'
+}
+reversed_typeIDS = dict(zip(type_IDS.values(),type_IDS.keys()))
+
+def var_or_func(st, st271):
+        if st[0] in NON_TERMINAL:
+            if st[0] == 319 and len(st) == 3 and st[2][0] == 322:
+                v_name = st[1][1][1]
+                sym = Name(v_name)
+                for s in GLOBAL_SYMBOL_LIST:
+                    if isinstance(s, Function) and s.name == sym.name and len(s.body) >= 1:
+                        s.parse(s.body, GLOBAL_SYMBOL_LIST)
+                        for p in s.local_names:
+                            if isinstance(p, Function) and len(p.body) >= 1:
+                                p.parse(p.body, p.visible_names + GLOBAL_SYMBOL_LIST)
+                        break
+            else:
+                for j in range(1,len(st)):
+                    var_or_call(st[j],st271)
+
+
+def parse_type_of_arith_expr(st, sym_list=GLOBAL_SYMBOL_LIST):
+    result = type_IDS['UNDEFINED']
+    if st[0] == 316 and len(st) >=4:
+            i = 1
+            while i < len(st) - 1:
+                if i == 1:
+                    left = parse_type_of_arith_expr(st[i])
+                    op = op_descr[st[i+1][1]]
+                    right = parse_type_of_arith_expr(st[i+2])
+                    # result = type_IDS['UNDEFINED']
+                    try:
+                        v = reversed_typeIDS[left]
+                    except KeyError:
+                        break
+                    try:
+                        for j in description[v][op]:
+                            if right in j.keys():
+                                result = j[right]
+                                break
+                        else:
+                            err = analizer_instance.Error(st[i+1][2], st[i+1][3], 1, "Not compatible types")
+                            if err not in ERROR_LIST:
+                                ERROR_LIST.append(err)
+                    except KeyError:
+                        err = analizer_instance.Error(st[i+1][2], st[i+1][3], 1, "Not compatible types")
+                        if err not in ERROR_LIST:
+                            ERROR_LIST.append(err)
+                    i += 2
+                else:
+                    left = result
+                    op = op_descr[st[i+1][1]]
+                    right = parse_type_of_arith_expr(st[i+2])
+                    # result = type_IDS['UNDEFINED']
+                    try:
+                        v = reversed_typeIDS[left]
+                    except KeyError:
+                        break
+                    try:
+                        for j in description[v][op]:
+                            if right in j.keys():
+                                result = j[right]
+                                break
+                        else:
+                            err = analizer_instance.Error(st[i+1][2], st[i+1][3], 1, "Not compatible types")
+                            if err not in ERROR_LIST:
+                                ERROR_LIST.append(err)
+                    except KeyError:
+                        err = analizer_instance.Error(st[i+1][2], st[i+1][3], 1, "Not compatible types")
+                        if err not in ERROR_LIST:
+                            ERROR_LIST.append(err)
+                    i += 2
+        # print(result)
+    # elif st[0] == 271 and len(st) == 2:
+    #             pass # var_or_call(st, st)
+    elif st[0] == 320:
+        if len(st) == 2 and st[1][0] != 1:
+            if st[1][1].startswith("'"):
+                result=type_IDS['str']
+                # return result
+            try:
+                int(st[1][1])
+                result = type_IDS['int']
+                # return result
+                # print (result)
+            except:
+                pass
+            try:
+                float(st[1][1])
+                result = type_IDS['float']
+                # return result
+                # print (result)
+            except:
+                pass
+        elif len(st) == 2 and st[1][0] == 1:
+            #if Name(st[1][1]) in sym_list:
+                for i in sym_list:
+                    if isinstance(i, Variable) and i.name == st[1][1]:
+                        return i.type
+                    elif isinstance(i, Function) and i.name == st[1][1]:
+                        i.do_all(i.body, i.local_names+GLOBAL_SYMBOL_LIST)
+                        return i.return_type
+    elif len(st) >= 2:
+        return parse_type_of_arith_expr(st[1], sym_list)
+    if result == 15:
+        pass
+    return result
+    pass
+
+
+def parse_type_of_constants(st):
+    pass
+
+
+
+
 def parse_main(st):
+    def add_var(st, type_var=type_IDS['UNDEFINED']):
+        if st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0] == token.NAME:
+            GLOBAL_SYMBOL_LIST.append(Variable(st[1][1], type_var))
+        else:
+            for j in range(1,len(st)):
+                if st[j][0] in NON_TERMINAL:
+                    add_var(st[j], type_var)
     def parse_right_part(st):
+        # result = parse_type_of_arith_expr(st)
+        # print (result)
         if st[0] in NON_TERMINAL:
             if st[0] == 319 and len(st) > 2 and st[1][1] == token.NAME:
                 var_name = st[1][1][1]
@@ -558,13 +710,7 @@ def parse_main(st):
                 for j in range(1,len(st)):
                     var_or_call(st[j],st271)
 
-    def add_var(st):
-        if st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0] == token.NAME:
-            GLOBAL_SYMBOL_LIST.append(Variable(st[1][1]))
-        else:
-            for j in range(1,len(st)):
-                if st[j][0] in NON_TERMINAL:
-                    add_var(st[j])
+
 
     def parse_compound_stmt(st):
         if st[0] == 262:
@@ -817,11 +963,12 @@ def parse_main(st):
     import_builtin()
 
 
-    def parse(st):
+    def parse(st, type_var=type_IDS['UNDEFINED']):
         if len(st) > 0 and st[0] in NON_TERMINAL:
             if st[0] == 271 and len(st) == 4 and st[2][0] != 273:
                 parse_right_part(st[3])
-                parse(st[1])
+                r = parse_type_of_arith_expr(st[3])
+                parse(st[1], r)
             elif st[0] == 323:
                 parse_right_part(st)
             elif st[0] == 271 and len(st) == 4 and st[2][0] == 273:
@@ -829,27 +976,36 @@ def parse_main(st):
                 parse_right_part(st[3])
             elif st[0] == 271 and len(st) == 2:
                 var_or_call(st, st)
-            elif st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0] == token.NAME and not is_identified(Variable(st[1][1])):
-                GLOBAL_SYMBOL_LIST.append(Variable(st[1][1]))
+            elif st[0] == 320 and not keyword.iskeyword(st[1][1]) and st[1][0] == token.NAME and not is_identified(Variable(st[1][1], type_var)):
+                GLOBAL_SYMBOL_LIST.append(Variable(st[1][1], type_var))
             elif st[0] == 293:
                 parse_compound_stmt(st[1])
             elif st[0] == 290:
                 for j in range(2, len(st)):
                     if st[j][0] == 1:
-                        globvar = Variable(st[j][1])
+                        globvar = Variable(st[j][1], type_var)
                         globvar.initialized = False
-                        if (globvar not in GLOBAL_SYMBOL_LIST) and (Variable(st[j][1]) not in GLOBAL_SYMBOL_LIST):
+                        if (globvar not in GLOBAL_SYMBOL_LIST) and (Variable(st[j][1], type_var) not in GLOBAL_SYMBOL_LIST):
                             GLOBAL_SYMBOL_LIST.append(globvar)
             elif st[0] == 282:
                 parse_import(st[1])
             elif st[0] == 300 and len(st) == 5:
-                GLOBAL_SYMBOL_LIST.append(Variable(st[4][1])) # тут должно быть возможно не определена
+                GLOBAL_SYMBOL_LIST.append(Variable(st[4][1], type_var)) # тут должно быть возможно не определена
             else:
                 for j in range(1, len(st)):
+
                     if st[j][0] == 279:
+
                         parse_right_part(st[j])
+                        #r = parse_type_of_arith_expr(st[j][2], GLOBAL_SYMBOL_LIST)
+                        #self.return_type = r
+                    elif  (st[j][0] == 271 and st[j][2][1]=='='):
+                        r = parse_type_of_arith_expr(st[j][3], GLOBAL_SYMBOL_LIST)
+                        #self.return_type = r
+                        parse_right_part(st[j][3])
+                        add_var(st[j][1], r)
                     else:
-                        parse(st[j])
+                        parse(st[j], type_var)
         else:
             return
 
@@ -912,7 +1068,7 @@ def clear_errors():
 if __name__ == "__main__":
     import os
     base = os.path.dirname(os.path.abspath(__file__)) + "/"
-    test_name = "MyTests/arguments_types_mismatch.py"
+    test_name = "MyTests/test2.py"
     source_file = open(base + test_name, 'r')
     source_code_str = source_file.read()
     source_file.close()

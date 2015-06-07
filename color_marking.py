@@ -6,7 +6,7 @@ from io import BytesIO
 from kumir_constants import *
 import parser
 import analizer_instance
-from static_analisys import GLOBAL_SYMBOL_LIST, Function, Module, Class, run_static_analisys, Variable
+# from static_analisys import GLOBAL_SYMBOL_LIST, Function, Module, Class, run_static_analisys, Variable
 
 SECONDARY_KWD = ("in", "as", "is", "and", "or", "not", "pass", "break", "continue", "return", "else", "elif",
                  "if", "except", "finally", "try", "raise")

@@ -21,7 +21,8 @@ type_IDS ={
     'range' : 11,
     'frozenset' : 12,
     'contextmanager' : 13,
-    'memoryview' : 14
+    'memoryview' : 14,
+    'UNDEFINED' : 15
 }
 
 
@@ -34,10 +35,6 @@ for name in names:
         for key in j.keys():
             if j[key].split(':')[1] == 'NotImplementedType':
                 continue
-            # print(j[key].split(':'))
-            # print(type_IDS[j[key].split(':')[1]])
-            # print(type_IDS[j[key].split(':')[0]])
-
             try:
                  description[name][key].append({type_IDS[j[key].split(':')[0]]:type_IDS[j[key].split(':')[1]]})
             except:
