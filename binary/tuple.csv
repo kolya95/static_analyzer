@@ -1,0 +1,10 @@
+count;__ge__;__lt__;__gt__;__contains__;__ne__;__subclasshook__;__le__;__eq__;__init__
+int:int;int:NotImplementedType;int:NotImplementedType;int:NotImplementedType;int:bool;int:NotImplementedType;int:NotImplementedType;int:NotImplementedType;int:NotImplementedType;int:NoneType
+float:int;float:NotImplementedType;float:NotImplementedType;float:NotImplementedType;float:bool;float:NotImplementedType;float:NotImplementedType;float:NotImplementedType;float:NotImplementedType;float:NoneType
+str:int;str:NotImplementedType;str:NotImplementedType;str:NotImplementedType;str:bool;str:NotImplementedType;str:NotImplementedType;str:NotImplementedType;str:NotImplementedType;str:NoneType
+list:int;list:NotImplementedType;list:NotImplementedType;list:NotImplementedType;list:bool;list:NotImplementedType;list:NotImplementedType;list:NotImplementedType;list:NotImplementedType;list:NoneType
+tuple:int;tuple:bool;tuple:bool;tuple:bool;tuple:bool;tuple:bool;tuple:NotImplementedType;tuple:bool;tuple:bool;tuple:NoneType
+set:int;set:NotImplementedType;set:NotImplementedType;set:NotImplementedType;set:bool;set:NotImplementedType;set:NotImplementedType;set:NotImplementedType;set:NotImplementedType;set:NoneType
+dict:int;dict:NotImplementedType;dict:NotImplementedType;dict:NotImplementedType;dict:bool;dict:NotImplementedType;dict:NotImplementedType;dict:NotImplementedType;dict:NotImplementedType;dict:NoneType
+bool:int;bool:NotImplementedType;bool:NotImplementedType;bool:NotImplementedType;bool:bool;bool:NotImplementedType;bool:NotImplementedType;bool:NotImplementedType;bool:NotImplementedType;bool:NoneType
+bytes:int;bytes:NotImplementedType;bytes:NotImplementedType;bytes:NotImplementedType;bytes:bool;bytes:NotImplementedType;bytes:NotImplementedType;bytes:NotImplementedType;bytes:NotImplementedType;bytes:NoneType

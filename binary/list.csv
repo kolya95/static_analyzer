@@ -1,0 +1,10 @@
+count;__ge__;__le__;__contains__;__subclasshook__;append;__ne__;__lt__;__gt__;remove;__eq__;index
+int:int;int:NotImplementedType;int:NotImplementedType;int:bool;int:NotImplementedType;int:NoneType;int:NotImplementedType;int:NotImplementedType;int:NotImplementedType;int:NoneType;int:NotImplementedType;int:int
+float:int;float:NotImplementedType;float:NotImplementedType;float:bool;float:NotImplementedType;float:NoneType;float:NotImplementedType;float:NotImplementedType;float:NotImplementedType;float:NoneType;float:NotImplementedType;float:int
+str:int;str:NotImplementedType;str:NotImplementedType;str:bool;str:NotImplementedType;str:NoneType;str:NotImplementedType;str:NotImplementedType;str:NotImplementedType;str:NoneType;str:NotImplementedType;str:int
+list:int;list:bool;list:bool;list:bool;list:NotImplementedType;list:NoneType;list:bool;list:bool;list:bool;list:NoneType;list:bool;list:int
+tuple:int;tuple:NotImplementedType;tuple:NotImplementedType;tuple:bool;tuple:NotImplementedType;tuple:NoneType;tuple:NotImplementedType;tuple:NotImplementedType;tuple:NotImplementedType;tuple:NoneType;tuple:NotImplementedType;tuple:int
+set:int;set:NotImplementedType;set:NotImplementedType;set:bool;set:NotImplementedType;set:NoneType;set:NotImplementedType;set:NotImplementedType;set:NotImplementedType;set:NoneType;set:NotImplementedType;set:int
+dict:int;dict:NotImplementedType;dict:NotImplementedType;dict:bool;dict:NotImplementedType;dict:NoneType;dict:NotImplementedType;dict:NotImplementedType;dict:NotImplementedType;dict:NoneType;dict:NotImplementedType;dict:int
+bool:int;bool:NotImplementedType;bool:NotImplementedType;bool:bool;bool:NotImplementedType;bool:NoneType;bool:NotImplementedType;bool:NotImplementedType;bool:NotImplementedType;bool:NoneType;bool:NotImplementedType;bool:int
+bytes:int;bytes:NotImplementedType;bytes:NotImplementedType;bytes:bool;bytes:NotImplementedType;bytes:NoneType;bytes:NotImplementedType;bytes:NotImplementedType;bytes:NotImplementedType;bytes:NoneType;bytes:NotImplementedType;bytes:int
