@@ -519,6 +519,7 @@ op_descr={
     '-': '__sub__',
     '/': '__div__',
     '*': '__mul__'
+
 }
 reversed_typeIDS = dict(zip(type_IDS.values(),type_IDS.keys()))
 
@@ -554,14 +555,15 @@ def parse_type_of_arith_expr(st, sym_list=GLOBAL_SYMBOL_LIST):
                     except KeyError:
                         break
                     try:
-                        for j in description[v][op]:
-                            if right in j.keys():
-                                result = j[right]
-                                break
-                        else:
-                            err = analizer_instance.Error(st[i+1][2], st[i+1][3], 1, "Not compatible types")
-                            if err not in ERROR_LIST:
-                                ERROR_LIST.append(err)
+                        if isinstance(right, int):
+                            for j in description[v][op]:
+                                if right in j.keys():
+                                    result = j[right]
+                                    break
+                            else:
+                                err = analizer_instance.Error(st[i+1][2], st[i+1][3], 1, "Not compatible types")
+                                if err not in ERROR_LIST:
+                                    ERROR_LIST.append(err)
                     except KeyError:
                         err = analizer_instance.Error(st[i+1][2], st[i+1][3], 1, "Not compatible types")
                         if err not in ERROR_LIST:
