@@ -517,9 +517,9 @@ from parse_csv import description
 op_descr={
     '+': '__add__',
     '-': '__sub__',
-    '/': '__div__',
+    '/': '__truediv__',
+    '//': '__floordiv__',
     '*': '__mul__'
-
 }
 reversed_typeIDS = dict(zip(type_IDS.values(),type_IDS.keys()))
 
@@ -542,7 +542,7 @@ def var_or_func(st, st271):
 
 def parse_type_of_arith_expr(st, sym_list=GLOBAL_SYMBOL_LIST):
     result = type_IDS['UNDEFINED']
-    if st[0] == 316 and len(st) >=4:
+    if (st[0] == 316 or st[0]==317) and len(st) >=4:
             i = 1
             while i < len(st) - 1:
                 if i == 1:
@@ -1070,7 +1070,7 @@ def clear_errors():
 if __name__ == "__main__":
     import os
     base = os.path.dirname(os.path.abspath(__file__)) + "/"
-    test_name = "MyTests/test2.py"
+    test_name = "MyTests/test7.py"
     source_file = open(base + test_name, 'r')
     source_code_str = source_file.read()
     source_file.close()
