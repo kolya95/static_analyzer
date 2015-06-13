@@ -92,7 +92,7 @@ class Callable(Name):
             for used in self.global_used:
                 for var in self.local_names:
                     if used[0].name == var.name and (not self.is_as_global(var)):
-                        err = analizer_instance.Error(used[1]-1, used[2], len(used.name), "Undefined local variable")
+                        err = analizer_instance.Error(used[1]-1, used[2], len(used[0].name), "Undefined local variable")
                         # err = MyError(used[1], used[2], "error, use local variable before defining" + " line " + str(used[1]) + " position " + str(used[2]))
                         if err not in ERROR_LIST:
                             ERROR_LIST.append(err)
@@ -446,7 +446,7 @@ class Callable(Name):
                         parse_right_part(st[j])
                         r = parse_type_of_arith_expr(st[j][2], self.visible_names+self.local_names)
                         self.return_type = r
-                    elif  (st[j][0] == 271 and st[j][2][1]=='='):
+                    elif  len(st[j]) >2 and (st[j][0] == 271 and st[j][2][1]=='='):
                         r = parse_type_of_arith_expr(st[j][3], self.visible_names+self.local_names)
                         self.return_type = r
                         parse_right_part(st[j][3])
@@ -1001,7 +1001,7 @@ def parse_main(st):
                         parse_right_part(st[j])
                         #r = parse_type_of_arith_expr(st[j][2], GLOBAL_SYMBOL_LIST)
                         #self.return_type = r
-                    elif  (st[j][0] == 271 and st[j][2][1]=='='):
+                    elif  len(st[j]) > 2 and (st[j][0] == 271 and st[j][2][1]=='='):
                         r = parse_type_of_arith_expr(st[j][3], GLOBAL_SYMBOL_LIST)
                         #self.return_type = r
                         parse_right_part(st[j][3])
